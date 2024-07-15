@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html>
+<html lang="tr">
 <head>
-  <title>Tüm İETT Araçları</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İETT Araçları</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
   <style>
-    body { margin: 0; padding: 0; }
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
     #map { position: absolute; top: 0; bottom: 0; width: 100%; }
     #loading { 
       position: absolute; 
@@ -29,15 +31,19 @@
       padding: 10px;
       border-radius: 5px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      max-width: 250px; /* Max genişlik belirleme */
     }
     #control-container input, #control-container button {
       display: block;
       margin-bottom: 10px;
-      width: 100%;
+      width: calc(100% - 20px); /* Kenar boşluğunu da dahil etme */
+      padding: 5px;
+      font-size: 14px;
     }
     #control-container label {
       display: block;
       margin-bottom: 5px;
+      font-size: 14px;
     }
     #legend {
       position: absolute;
@@ -48,27 +54,29 @@
       padding: 10px;
       border-radius: 5px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      max-width: 250px; /* Max genişlik belirleme */
     }
     #legend h4 {
       margin: 0;
       cursor: pointer;
-      font-size: 14px;
-      color: #666;
+      font-size: 16px;
     }
     #legend-content {
       display: none;
       margin-top: 10px;
+      font-size: 14px;
     }
     #legend img {
       vertical-align: middle;
     }
-    .last-update {
+    .toggle-btn {
       position: absolute;
       top: 10px;
-      left: 10px;
-      z-index: 1001;
-      background: white;
-      padding: 5px 10px;
+      right: 10px;
+      cursor: pointer;
+      z-index: 1002;
+      padding: 5px;
+      background-color: white;
       border-radius: 5px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
@@ -86,15 +94,20 @@
     <button id="update-button">Verileri Güncelle</button>
   </div>
   <div id="legend">
-    <h4 style="font-size: 14px; color: #666;">Lejant</h4>
+    <h4>Lejant</h4>
     <div id="legend-content">
       <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Kırmızı İkon" width="12" height="20"> ÖHO</div>
       <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" alt="Mavi İkon" width="12" height="20"> Metrobüs</div>
       <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png" alt="Siyah İkon" width="12" height="20"> İETT</div>
-      <div style="font-size: 12px; color: #666; margin-top: 5px;">Şeffaf ikonlar 30 dakikadır güncellenmeyen araçları gösterir.</div>
+      <div style="margin-top: 10px;">
+        <span style="font-size: 12px; color: #666;">Şeffaf ikonlar 30 dakikadır güncellenmeyen araçları gösterir.</span>
+      </div>
     </div>
   </div>
-  <div class="last-update" id="last-update"></div>
+
+  <div class="toggle-btn" id="toggle-btn">
+    <img src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/layers.png" alt="Toggle Layers">
+  </div>
 
   <script>
     var map = L.map('map').setView([41.0161, 28.9944], 14); // Merkez koordinatlarını ve yakınlaştırma seviyesini belirtin
@@ -130,68 +143,66 @@
       });
     }
 
-    // GEOJSON verisini URL'den alma ve haritaya ekleme
-    function updateGeoJSON() {
-      var now = Date.now();
-      if (now - lastUpdateTime < 60000) { // Son güncellemeden bu yana 1 dakika geçmemişse güncellemeyi atla
-        alert('Veriler en son 1 dakikadan kısa bir süre önce güncellendi. Lütfen biraz bekleyin.');
-        return;
-      }
+// GEOJSON verisini URL'den alma ve haritaya ekleme
+function updateGeoJSON() {
+  var now = Date.now();
+  if (now - lastUpdateTime < 60000) { // Son güncellemeden bu yana 1 dakika geçmemişse güncellemeyi atla
+    alert('Veriler en son 1 dakikadan kısa bir süre önce güncellendi. Lütfen biraz bekleyin.');
+    return;
+  }
 
-      document.getElementById('loading').style.display = 'block'; // Bekleme ekranını göster
+  document.getElementById('loading').style.display = 'block'; // Bekleme ekranını göster
 
-      fetch('https://api.codetabs.com/v1/proxy/?quest=https://mekansal.herokuapp.com/api/filo')
-        .then(response => response.json())
-        .then(data => {
-          markers.clearLayers();
-          allMarkers = [];
+  fetch('https://api.codetabs.com/v1/proxy/?quest=https://mekansal.herokuapp.com/api/filo')
+    .then(response => response.json())
+    .then(data => {
+      markers.clearLayers();
+      allMarkers = [];
 
-          var geojsonLayer = L.geoJSON(data, {
-            pointToLayer: function (feature, latlng) {
-              var garajValue = feature.properties.Garaj;
-              var saatValue = feature.properties.Saat;
-              var currentDate = new Date();
-              var currentTime = currentDate.getHours() * 60 + currentDate.getMinutes();
-              var [hours, minutes] = saatValue.split(':').map(Number);
-              var featureTime = hours * 60 + minutes;
+      var geojsonLayer = L.geoJSON(data, {
+        pointToLayer: function (feature, latlng) {
+          var garajValue = feature.properties.Garaj;
+          var saatValue = feature.properties.Saat;
+          var currentDate = new Date();
+          var currentTime = currentDate.getHours() * 60 + currentDate.getMinutes();
+          var [hours, minutes] = saatValue.split(':').map(Number);
+          var featureTime = hours * 60 + minutes;
 
-              var opacity = 1.0;
-              if ((currentTime - featureTime) > 30) { // 30 dakikadan daha eski ise
-                opacity = 0.5;
-              }
+          var opacity = 1.0;
+          if ((currentTime - featureTime) > 30) { // 30 dakikadan daha eski ise
+            opacity = 0.5;
+          }
 
-              var customIcon = getCustomIcon(garajValue, opacity);
-              var marker = L.marker(latlng, { icon: customIcon, opacity: opacity });
-              marker.feature = feature;
-              allMarkers.push(marker);
-              return marker;
-            },
-            onEachFeature: function (feature, layer) {
-              if (feature.geometry.type === 'Point') {
-                var popupContent = `
-                  <b>Kapı No:</b> ${feature.properties.KapiNo}<br>
-                  <b>Saat:</b> ${feature.properties.Saat}<br>
-                  <b>Garaj:</b> ${feature.properties.Garaj}<br>
-                  <b>Plaka:</b> ${feature.properties.Plaka}<br>
-                  <a href="https://arac.iett.gov.tr/${feature.properties.KapiNo}" target="_blank">Detaylı bilgi</a>
-                `;
-                layer.bindPopup(popupContent);
-                markers.addLayer(layer);
-              }
-            }
-          });
+          var customIcon = getCustomIcon(garajValue, opacity);
+          var marker = L.marker(latlng, { icon: customIcon, opacity: opacity });
+          marker.feature = feature;
+          allMarkers.push(marker);
+          return marker;
+        },
+        onEachFeature: function (feature, layer) {
+          if (feature.geometry.type === 'Point') {
+            var popupContent = `
+              <b>Kapı No:</b> ${feature.properties.KapiNo}<br>
+              <b>Saat:</b> ${feature.properties.Saat}<br>
+              <b>Garaj:</b> ${feature.properties.Garaj}<br>
+              <b>Plaka:</b> ${feature.properties.Plaka}<br>
+              <a href="https://arac.iett.gov.tr/${feature.properties.KapiNo}" target="_blank">Detaylı bilgi</a>
+            `;
+            layer.bindPopup(popupContent);
+            markers.addLayer(layer);
+          }
+        }
+      });
 
-          map.addLayer(markers);
-          document.getElementById('loading').style.display = 'none'; // Bekleme ekranını gizle
-          updateLastUpdateTime(); // Son güncelleme zamanını güncelle
-          lastUpdateTime = Date.now(); // Son güncelleme zamanını kaydet
-        })
-        .catch(error => {
-          console.error('Error fetching GEOJSON data:', error);
-          document.getElementById('loading').style.display = 'none'; // Hata durumunda da bekleme ekranını gizle
-        });
-    }
-
+      map.addLayer(markers);
+      document.getElementById('loading').style.display = 'none'; // Bekleme ekranını gizle
+      lastUpdateTime = Date.now(); // Son güncelleme zamanını kaydet
+    })
+    .catch(error => {
+      console.error('Error fetching GEOJSON data:', error);
+      document.getElementById('loading').style.display = 'none'; // Hata durumunda da bekleme ekranını gizle
+    });
+}
     // Arama kutusu için filtreleme fonksiyonu
     function filterMarkers() {
       var searchValue = document.getElementById('search').value.toLowerCase();
@@ -248,12 +259,16 @@
       }
     });
 
-    // Son güncelleme zamanını güncelleyen fonksiyon
-    function updateLastUpdateTime() {
-      var date = new Date(lastUpdateTime);
-      var formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-      document.getElementById('last-update').textContent = `Son Güncelleme: ${formattedDate}`;
-    }
+    // Sağ üst köşedeki açma/kapama ikonuna tıklama olayı
+    document.getElementById('toggle-btn').addEventListener('click', function() {
+      var controlContainer = document.getElementById('control-container');
+      if (controlContainer.style.display === 'none' || controlContainer.style.display === '') {
+        controlContainer.style.display = 'block';
+      } else {
+        controlContainer.style.display = 'none';
+      }
+    });
+
   </script>
 </body>
 </html>
