@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-5HQGHMMDKB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-5HQGHMMDKB');
+</script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>İETT Araçları</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
+    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+    #loading { 
+      position: absolute; 
+      top: 50%; 
+      left: 50%; 
+      transform: translate(-50%, -50%); 
+      background: rgba(255, 255, 255, 0.8); 
+      padding: 20px; 
+      border-radius: 8px; 
+      font-size: 18px; 
+      text-align: center; 
+      z-index: 1000;
+    }
+    #control-container {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 1001;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      max-width: 250px; /* Max genişlik belirleme */
+    }
+    #control-container input, #control-container button {
+      display: block;
+      margin-bottom: 10px;
+      width: calc(100% - 20px); /* Kenar boşluğunu da dahil etme */
+      padding: 5px;
+      font-size: 14px;
+    }
+    #control-container label {
+      display: block;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+    #legend {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 1001;
+      background: white;
+      padding: 10px;
+      border-radius: 5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      max-width: 250px; /* Max genişlik belirleme */
+    }
+    #legend h4 {
+      margin: 0;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #legend-content {
+      display: none;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    #legend img {
+      vertical-align: middle;
+    }
+    .toggle-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      cursor: pointer;
+      z-index: 1002;
+      padding: 5px;
+      background-color: white;
+      border-radius: 5px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+  </style>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="loading">Veriler yükleniyor...</div>
+  <div id="control-container">
+    <input type="text" id="search" placeholder="Kapı No veya Plaka Ara">
+    <label for="update-interval">Güncelleme Aralığı (dakika):</label>
+    <input type="number" id="update-interval" min="1" max="20" value="5">
+    <button id="update-button">Verileri Güncelle</button>
+  </div>
+  <div id="legend">
+    <h4>Lejant</h4>
+    <div id="legend-content">
+      <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" alt="Kırmızı İkon" width="12" height="20"> ÖHO</div>
+      <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" alt="Mavi İkon" width="12" height="20"> Metrobüs</div>
+      <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png" alt="Siyah İkon" width="12" height="20"> İETT</div>
+      <div style="margin-top: 10px;">
+        <span style="font-size: 12px; color: #666;">Şeffaf ikonlar 30 dakikadır güncellenmeyen araçları gösterir.<br>Yapay zeka tarafından yapılmıştır. (Tolga T.)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="toggle-btn" id="toggle-btn">
+    <img src="https://tumotobusler.vercel.app/ikonlar/settings-sliders.png" alt="Filtreler">
+  </div>
+
+  <script>
+    var map = L.map('map').setView([41.0161, 28.9944], 14); // Merkez koordinatlarını ve yakınlaştırma seviyesini belirtin
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors | Uicons by <a href="https://www.flaticon.com/uicons">Flaticon</a>'
+    }).addTo(map);
+
+    var markers = L.markerClusterGroup();
+    var allMarkers = [];
+    var updateIntervalID;
+    var lastUpdateTime = 0;
+
+    // Özelleştirilmiş ikon ayarları
+    function getCustomIcon(garajValue, opacity) {
+      var iconUrl;
+      if (garajValue === null || garajValue === "null") {
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png';
+      } else if (garajValue === "Hasanpaşa" || garajValue === "Edirnekapı") {
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
+      } else {
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png';
+      }
+
+      return L.icon({
+        iconUrl: iconUrl,
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        opacity: opacity
+      });
+    }
+
+// GEOJSON verisini URL'den alma ve haritaya ekleme
+function updateGeoJSON() {
+  var now = Date.now();
+  if (now - lastUpdateTime < 60000) { // Son güncellemeden bu yana 1 dakika geçmemişse güncellemeyi atla
+    alert('Veriler en son 1 dakikadan kısa bir süre önce güncellendi. Lütfen biraz bekleyin.');
+    return;
+  }
+
+  document.getElementById('loading').style.display = 'block'; // Bekleme ekranını göster
+
+  fetch('https://api.codetabs.com/v1/proxy/?quest=https://mekansal.herokuapp.com/api/filo')
+    .then(response => response.json())
+    .then(data => {
+      markers.clearLayers();
+      allMarkers = [];
+
+      var geojsonLayer = L.geoJSON(data, {
+        pointToLayer: function (feature, latlng) {
+          var garajValue = feature.properties.Garaj;
+          var saatValue = feature.properties.Saat;
+          var currentDate = new Date();
+          var currentTime = currentDate.getHours() * 60 + currentDate.getMinutes();
+          var [hours, minutes] = saatValue.split(':').map(Number);
+          var featureTime = hours * 60 + minutes;
+
+          var opacity = 1.0;
+          if ((currentTime - featureTime) > 30) { // 30 dakikadan daha eski ise
+            opacity = 0.5;
+          }
+
+          var customIcon = getCustomIcon(garajValue, opacity);
+          var marker = L.marker(latlng, { icon: customIcon, opacity: opacity });
+          marker.feature = feature;
+          allMarkers.push(marker);
+          return marker;
+        },
+        onEachFeature: function (feature, layer) {
+          if (feature.geometry.type === 'Point') {
+            var popupContent = `
+              <b>Kapı No:</b> ${feature.properties.KapiNo}<br>
+              <b>Saat:</b> ${feature.properties.Saat}<br>
+              <b>Garaj:</b> ${feature.properties.Garaj}<br>
+              <b>Plaka:</b> ${feature.properties.Plaka}<br>
+              <a href="https://arac.iett.gov.tr/${feature.properties.KapiNo}" target="_blank">Detaylı bilgi</a>
+            `;
+            layer.bindPopup(popupContent);
+            markers.addLayer(layer);
+          }
+        }
+      });
+
+      map.addLayer(markers);
+      document.getElementById('loading').style.display = 'none'; // Bekleme ekranını gizle
+      lastUpdateTime = Date.now(); // Son güncelleme zamanını kaydet
+    })
+    .catch(error => {
+    console.error('Error fetching GEOJSON data:', error);
+    document.getElementById('loading').innerHTML = 'Veri bulunamadı'; // Hata durumunda Türkçe mesaj göster
+    document.getElementById('loading').style.backgroundColor = '#f8d7da'; // Hata uyarısı için arkaplan rengini değiştir
+    document.getElementById('loading').style.color = '#721c24'; // Metin rengini hata renginde yap
+});
+
+}
+    // Arama kutusu için filtreleme fonksiyonu
+    function filterMarkers() {
+      var searchValue = document.getElementById('search').value.toLowerCase();
+
+      markers.clearLayers();
+
+      allMarkers.forEach(marker => {
+        var properties = marker.feature.properties;
+        var showMarker = true;
+
+        if (searchValue.startsWith('34')) {
+          if (!properties.Plaka.toLowerCase().includes(searchValue)) {
+            showMarker = false;
+          }
+        } else {
+          if (!properties.KapiNo.toLowerCase().includes(searchValue)) {
+            showMarker = false;
+          }
+        }
+
+        if (showMarker) {
+          markers.addLayer(marker);
+        }
+      });
+    }
+
+    // Güncelleme aralığını ayarlayan fonksiyon
+    function setUpdateInterval() {
+      var interval = parseInt(document.getElementById('update-interval').value) * 60000; // Dakikayı milisaniyeye çevir
+      clearInterval(updateIntervalID); // Önceki intervali temizle
+      updateIntervalID = setInterval(updateGeoJSON, interval); // Yeni intervali ayarla
+    }
+
+    // İlk yükleme
+    updateGeoJSON();
+    updateIntervalID = setInterval(updateGeoJSON, 300000); // Varsayılan olarak 5 dakika (300000 milisaniye) aralıklarla veriyi güncelleme
+
+    // Güncelleme butonuna tıklama işlevi
+    document.getElementById('update-button').addEventListener('click', updateGeoJSON);
+
+    // Arama kutusu için olay dinleyicisi
+    document.getElementById('search').addEventListener('input', filterMarkers);
+
+    // Güncelleme aralığı input için olay dinleyicisi
+    document.getElementById('update-interval').addEventListener('input', setUpdateInterval);
+
+    // Lejant için açma/kapama işlevi
+    document.getElementById('legend').addEventListener('click', function() {
+      var content = document.getElementById('legend-content');
+      if (content.style.display === 'none' || content.style.display === '') {
+        content.style.display = 'block';
+      } else {
+        content.style.display = 'none';
+      }
+    });
+
+    // Sağ üst köşedeki açma/kapama ikonuna tıklama olayı
+    document.getElementById('toggle-btn').addEventListener('click', function() {
+      var controlContainer = document.getElementById('control-container');
+      if (controlContainer.style.display === 'none' || controlContainer.style.display === '') {
+        controlContainer.style.display = 'block';
+      } else {
+        controlContainer.style.display = 'none';
+      }
+    });
+
+  </script>
+</body>
+</html>
