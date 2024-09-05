@@ -208,9 +208,12 @@ function updateGeoJSON() {
       lastUpdateTime = Date.now(); // Son güncelleme zamanını kaydet
     })
     .catch(error => {
-      console.error('Error fetching GEOJSON data:', error);
-      document.getElementById('loading').style.display = 'none'; // Hata durumunda da bekleme ekranını gizle
-    });
+    console.error('Error fetching GEOJSON data:', error);
+    document.getElementById('loading').innerHTML = 'Otobüs verisi alınamadı.'; // Hata durumunda Türkçe mesaj göster
+    document.getElementById('loading').style.backgroundColor = '#ffffff'; // Hata uyarısı için arkaplan rengini değiştir
+    document.getElementById('loading').style.color = '#0000000'; // Metin rengini hata renginde yap
+});
+
 }
     // Arama kutusu için filtreleme fonksiyonu
     function filterMarkers() {
