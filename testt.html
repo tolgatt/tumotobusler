@@ -96,11 +96,11 @@
   <div id="legend">
     <h4>Lejant</h4>
     <div id="legend-content">
-      <div><img src="https://maps.google.com/mapfiles/ms/icons/red-dot.png" width="12" height="20"> ÖHO (Garaj boş)</div>
-      <div><img src="https://maps.google.com/mapfiles/ms/icons/blue-dot.png" width="12" height="20"> Hasanpaşa / Edirnekapı</div>
-      <div><img src="https://maps.google.com/mapfiles/ms/icons/black-dot.png" width="12" height="20"> Diğer Garajlar</div>
+      <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" width="12" height="20"> ÖHO</div>
+      <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" width="12" height="20"> Metrobüs</div>
+      <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png" width="12" height="20"> İETT</div>
       <div style="margin-top: 10px;">
-        <span style="font-size: 12px; color: #666;">Yapay zeka tarafından yapılmıştır. (Tolga T.)</span>
+        <span style="font-size: 12px; color: #666;">Tolga T. (2025)</span>
       </div>
     </div>
   </div>
@@ -125,11 +125,11 @@
       let iconUrl;
 
       if (!garage || garage === "null") {
-        iconUrl = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png';
       } else if (["Hasanpaşa", "Edirnekapı"].includes(garage.trim())) {
-        iconUrl = 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
       } else {
-        iconUrl = 'https://maps.google.com/mapfiles/ms/icons/black-dot.png';
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png';
       }
 
       return L.icon({
