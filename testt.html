@@ -172,12 +172,11 @@
 
           marker.feature = { properties: vehicle };
           const popup = `
-            <b>Kapı no:</b> ${vehicle.vehicleDoorCode}<br>
-            <b>Plaka:</b> ${vehicle.numberPlate}<br>
+            <b>${vehicle.vehicleDoorCode} / ${vehicle.numberPlate}</b><br>
             <b>Garaj:</b> ${vehicle.garageName || '—'}<br>
-            <b>Firma:</b> ${vehicle.operatorType}<br>
+            <b>Şirket:</b> ${vehicle.operatorType}<br>
             <b>Araç modeli:</b> ${vehicle.brandName} - ${vehicle.modelYear}<br>
-            <b>Son konum</b> ${vehicle.lastLocationDate} - ${vehicle.lastLocationTime}<br>
+            <b>Son konum:</b> ${vehicle.lastLocationDate} ${vehicle.lastLocationTime}<br>
             <a href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">Detaylı Bilgi</a>
           `;
 
