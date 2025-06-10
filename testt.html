@@ -1,76 +1,183 @@
-<!DOCTYPE html><html lang="tr">
+<!DOCTYPE html>
+<html lang="tr">
 <head>
-  <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-5HQGHMMDKB"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());gtag('config', 'G-5HQGHMMDKB'); </script> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <title>İETT Araçları</title>
-  <link rel="icon" href="ikonlar/otobus.ico" type="image/x-icon"/>
-<link rel="shortcut icon" href="ikonlar/otobus.ico" type="image/x-icon"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <meta charset="UTF-8">
+  <title>Otobüs Haritası</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link 
+    rel="stylesheet" 
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
   <style>
-    body { margin: 0; padding: 0; font-family: Arial, sans-serif; }
-    #map { position: absolute; top: 0; bottom: 0; width: 100%; }
-    #loading { 
-      position: absolute; 
-      top: 50%; 
-      left: 50%; 
-      transform: translate(-50%, -50%); 
-      background: rgba(255, 255, 255, 0.8); 
-      padding: 20px; 
-      border-radius: 8px; 
-      font-size: 18px; 
-      text-align: center; 
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+    }
+
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
       z-index: 1000;
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    }
+
+    #loading {
+      display: none;
+      position: absolute;
+      top: 50px;
+      left: 10px;
+      z-index: 1000;
+      background-color: white;
+      padding: 8px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    select, button {
+      margin-bottom: 10px;
+      width: 100%;
     }
   </style>
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
 </head>
 <body>
+  <div id="controls">
+    <label for="operatorFilter">Firma Filtresi:</label>
+    <select id="operatorFilter">
+      <option value="all">Hepsi</option>
+    </select>
+    <button onclick="updateGeoJSON()">Haritayı Güncelle</button>
+  </div>
+
+  <div id="loading">Yükleniyor...</div>
   <div id="map"></div>
-  <div id="loading">Veriler yükleniyor...</div>
-  <div id="location-container" style="position: absolute; bottom: 50px; right: 10px; z-index: 1001;">
-    <button id="show-location" style="padding: 10px; font-size: 14px; background: white; border: 1px solid #ccc; border-radius: 5px; cursor: pointer;">Konumumu Göster</button>
-  </div>  <script>
-    var map = L.map('map').setView([41.0161, 28.9944], 14);
-    
+
+  <script 
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+  </script>
+  <script>
+    let map = L.map('map').setView([41.01, 29.0], 11);
+    let markers = L.layerGroup();
+    let allMarkers = [];
+    let lastUpdateTime = 0;
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap contributors'
+      attribution: '© OpenStreetMap katkıcıları'
     }).addTo(map);
 
-    function showUserLocation() {
-      if (!navigator.geolocation) {
-        alert("Tarayıcınız konum servisini desteklemiyor.");
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(function(position) {
-        var userLat = position.coords.latitude;
-        var userLng = position.coords.longitude;
-
-        var userIcon = L.icon({
-          iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png'
-        });
-
-        var userMarker = L.marker([userLat, userLng], { icon: userIcon }).addTo(map);
-        userMarker.bindPopup("<b>Mevcut Konumunuz</b>").openPopup();
-
-        map.setView([userLat, userLng], 14);
-      }, function(error) {
-        alert("Konum alınırken hata oluştu: " + error.message);
+    function getCustomIcon(garage, opacity) {
+      return L.icon({
+        iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61205.png',
+        iconSize: [30, 30],
+        iconAnchor: [15, 30],
+        popupAnchor: [0, -30],
+        className: `garage-${garage || 'bilinmiyor'}`
       });
     }
 
-    document.getElementById('show-location').addEventListener('click', showUserLocation);
-  </script></body>
+    function updateGeoJSON() {
+      const now = Date.now();
+      if (now - lastUpdateTime < 60000) {
+        alert("Lütfen 1 dakika bekleyin.");
+        return;
+      }
+
+      document.getElementById('loading').style.display = 'block';
+
+      fetch("https://arac.iett.gov.tr/api/task/bus-fleet/buses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: "{}"
+      })
+      .then(res => res.json())
+      .then(data => {
+        markers.clearLayers();
+        allMarkers = [];
+
+        const selectedOperator = document.getElementById('operatorFilter').value;
+
+        const uniqueOperators = new Set();
+        data.forEach(bus => {
+          if (!bus.latitude || !bus.longitude) return;
+
+          uniqueOperators.add(bus.operatorType);
+
+          if (selectedOperator !== "all" && bus.operatorType !== selectedOperator) {
+            return;
+          }
+
+          const marker = L.marker([bus.latitude, bus.longitude], {
+            icon: getCustomIcon(bus.garageName, 1.0),
+            opacity: 1.0
+          });
+
+          const [day, month, year] = bus.lastLocationDate.split('-').map(Number);
+          const [hour, min, sec] = bus.lastLocationTime.split(':').map(Number);
+          const lastSeen = new Date(year, month - 1, day, hour, min, sec);
+          const minsAgo = (Date.now() - lastSeen.getTime()) / 60000;
+
+          if (minsAgo > 30) marker.setOpacity(0.5);
+
+          marker.bindPopup(`
+            <b>Kapı No:</b> ${bus.vehicleDoorCode}<br>
+            <b>Plaka:</b> ${bus.numberPlate}<br>
+            <b>Garaj:</b> ${bus.garageName ?? 'Bilinmiyor'}<br>
+            <b>Firma:</b> ${bus.operatorType}<br>
+            <b>Saat:</b> ${bus.lastLocationTime}<br>
+            <a href="https://arac.iett.gov.tr/${bus.vehicleDoorCode}" target="_blank">Detay</a>
+          `);
+
+          markers.addLayer(marker);
+          allMarkers.push(marker);
+        });
+
+        map.addLayer(markers);
+        lastUpdateTime = now;
+        document.getElementById('loading').style.display = 'none';
+
+        populateFilterOptions(uniqueOperators);
+      })
+      .catch(err => {
+        console.error("Veri alınamadı:", err);
+        document.getElementById('loading').innerText = "Veri alınamadı!";
+        setTimeout(() => {
+          document.getElementById('loading').style.display = 'none';
+        }, 3000);
+      });
+    }
+
+    function populateFilterOptions(operatorSet) {
+      const select = document.getElementById('operatorFilter');
+      const currentOptions = Array.from(select.options).map(o => o.value);
+      operatorSet.forEach(operator => {
+        if (!currentOptions.includes(operator)) {
+          const opt = document.createElement('option');
+          opt.value = operator;
+          opt.textContent = operator;
+          select.appendChild(opt);
+        }
+      });
+    }
+
+    // Başlangıçta yükle
+    updateGeoJSON();
+  </script>
+</body>
 </html>
