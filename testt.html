@@ -1,12 +1,20 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Otobüs Haritası</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link 
     rel="stylesheet" 
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <link 
+    rel="stylesheet" 
+    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+  />
+  <link 
+    rel="stylesheet" 
+    href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"
   />
   <style>
     html, body {
@@ -70,17 +78,19 @@
   <script 
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
   </script>
+  <script 
+    src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js">
+  </script>
   <script>
     let map = L.map('map').setView([41.01, 29.0], 11);
-    let markers = L.layerGroup();
-    let allMarkers = [];
+    let markerClusterGroup = L.markerClusterGroup();
     let lastUpdateTime = 0;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap katkıcıları'
     }).addTo(map);
 
-    function getCustomIcon(garage, opacity) {
+    function getCustomIcon(garage) {
       return L.icon({
         iconUrl: 'https://cdn-icons-png.flaticon.com/512/61/61205.png',
         iconSize: [30, 30],
@@ -108,12 +118,10 @@
       })
       .then(res => res.json())
       .then(data => {
-        markers.clearLayers();
-        allMarkers = [];
-
+        markerClusterGroup.clearLayers();
         const selectedOperator = document.getElementById('operatorFilter').value;
-
         const uniqueOperators = new Set();
+
         data.forEach(bus => {
           if (!bus.latitude || !bus.longitude) return;
 
@@ -124,8 +132,7 @@
           }
 
           const marker = L.marker([bus.latitude, bus.longitude], {
-            icon: getCustomIcon(bus.garageName, 1.0),
-            opacity: 1.0
+            icon: getCustomIcon(bus.garageName)
           });
 
           const [day, month, year] = bus.lastLocationDate.split('-').map(Number);
@@ -144,15 +151,13 @@
             <a href="https://arac.iett.gov.tr/${bus.vehicleDoorCode}" target="_blank">Detay</a>
           `);
 
-          markers.addLayer(marker);
-          allMarkers.push(marker);
+          markerClusterGroup.addLayer(marker);
         });
 
-        map.addLayer(markers);
+        map.addLayer(markerClusterGroup);
+        populateFilterOptions(uniqueOperators);
         lastUpdateTime = now;
         document.getElementById('loading').style.display = 'none';
-
-        populateFilterOptions(uniqueOperators);
       })
       .catch(err => {
         console.error("Veri alınamadı:", err);
@@ -176,7 +181,6 @@
       });
     }
 
-    // Başlangıçta yükle
     updateGeoJSON();
   </script>
 </body>
