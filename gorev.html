@@ -209,8 +209,8 @@ button:not(#yardimButonu):hover {
           const updatedStartTime = convertUnixToTime(task.updatedStartTime);
           const endTime = convertUnixToTime(task.taskEndTime);
           const direction = (() => {
-            if (!task.lineName || !task.lineName.includes(" - ")) return task.routeDirection === 1 ? "Gidiş" : "Dönüş";
-            const [gidis, donus] = task.lineName.split(" - ");
+            if (!task.lineName || !task.lineName.includes("-")) return task.routeDirection === 1 ? "Gidiş" : "Dönüş";
+            const [gidis, donus] = task.lineName.split("-");
             return task.routeDirection === 1 ? donus.trim() : gidis.trim();
           })();
 
