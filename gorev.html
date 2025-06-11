@@ -92,12 +92,12 @@ button:not(#yardimButonu):hover {
     <ul>
       <li><span style="background:#caffbf">&nbsp;&nbsp;&nbsp;</span> T - Tamamlandı</li>
       <li><span style="background:#ffadad">&nbsp;&nbsp;&nbsp;</span> I - İptal</li>
-      <li><span style="background:#fdffb6">&nbsp;&nbsp;&nbsp;</span> YK - Yedek</li>
+      <li><span style="background:#fdffb6">&nbsp;&nbsp;&nbsp;</span> YK - Yolda kaldı</li>
       <li><span style="background:#9bf6ff">&nbsp;&nbsp;&nbsp;</span> A - Aktif</li>
       <li><span style="background:#d6eadf">&nbsp;&nbsp;&nbsp;</span> B - Beklemede</li>
     </ul>
     <p><strong>Açıklama:</strong><br>
-    Planlanan kalkış saati (Gerçekleşen kalkış saati) - Yön | Hat ve güzergah kodu / Servis kodu | Yakın olduğu durak</p>
+    Planlanan kalkış saati (Gerçekleşen kalkış saati) - Kalkış yeri<br>Hat ve güzergah kodu<br>Yakın olduğu durak</p>
   </div>  <h1 id="baslik">İETT Araç Görevleri</h1>
   <div id="timestamp"></div>
   <div id="tasksContainer" class="task-grid"></div>  <script>
@@ -159,7 +159,7 @@ button:not(#yardimButonu):hover {
           const title = `
             <div class="task-header">
               <strong>${approxStartTime}</strong> (${updatedStartTime}) - ${direction}<br>
-              ${task.routeCode} / ${task.serviceNo} <br>
+              ${task.routeCode}<br>
               ${task.stopName || "-"} (${task.stopCode || "-"})
               ${task.note ? '<br>Not: ' + task.note : ''}
             </div>
