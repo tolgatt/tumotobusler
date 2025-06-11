@@ -187,7 +187,7 @@
             <b>Şirket:</b> ${vehicle.operatorType}<br>
             <b>Araç modeli:</b> ${vehicle.brandName} - ${vehicle.modelYear}<br>
             <b>Son konum:</b> ${vehicle.lastLocationDate} ${vehicle.lastLocationTime}<br>
-            <a href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">Detaylı Bilgi</a>
+            <a href="/gorev.html?arac=${vehicle.vehicleDoorCode}" target="_blank">Görev bilgisi</a>
           `;
 
           marker.bindPopup(popup);
