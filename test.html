@@ -313,7 +313,7 @@
       markers.clearLayers();
       allMarkers.forEach(marker => {
         const p = marker.feature.properties;
-        if p.garage.toLowerCase().includes(value))) {
+        p.garage.toLowerCase().includes(value))) {
           markers.addLayer(marker);
         }
       });
