@@ -113,6 +113,15 @@
     .icon-badge.disabled { opacity: 0.4; }
     .popup-link { display: block; text-align: center; padding: 10px; color: #2980b9; text-decoration: none; font-weight: 500; }
     .popup-link:hover { text-decoration: underline; }
+    .leaflet-popup-content-wrapper {
+    background: transparent;
+    box-shadow: none;
+    border: none;
+}
+
+.leaflet-popup-tip {
+    display: none; /* ok simgesini kaldırır */
+}
   </style>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
