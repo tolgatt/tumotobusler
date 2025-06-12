@@ -104,7 +104,7 @@
     .popup-header { background: #f5f5f5; padding: 10px; border-bottom: 1px solid #ddd; }
     .popup-header .door-code { font-size: 16px; font-weight: bold; color: #2c3e50; }
     .popup-header .plate { color: #777; font-size: 13px; }
-    .popup-section { padding: 10px; border-bottom: 1px solid #eee; }
+    .popup-section { padding: 15px; border-bottom: 1px solid #eee; }
     .popup-section:last-child { border-bottom: none; }
     .popup-section strong { display: inline-block; width: 90px; color: #555; }
     .popup-icons { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; justify-content: flex-start; }
@@ -192,7 +192,7 @@
             <div class="icon-badge ${vehicle.accessibility ? '' : 'disabled'}">♿ Engelli erişimi</div>
             <div class="icon-badge ${vehicle.isAirConditioned ? '' : 'disabled'}">❄️ Klima</div>
           </div>
-          <a class="popup-link" href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">🔗 Detaylı Bilgi</a>
+          <a class="popup-link" href="https://tumotobusler.vercel.app/gorev.html?arac=${vehicle.vehicleDoorCode}&utm_source=harita" target="_blank">🔗 Detaylı görev bilgisi</a> <a class="popup-link" href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">🔗 Araç İETT</a>
         </div>
       `;
     }
