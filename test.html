@@ -101,6 +101,7 @@
     .popup-container.red { border-color: #e74c3c; }
     .popup-container.blue { border-color: #3498db; }
     .popup-container.black { border-color: #2c3e50; }
+    .popup-container.green { border-color: #2aad27; }
     .popup-header { background: #f5f5f5; padding: 10px; border-bottom: 1px solid #ddd; }
     .popup-header .door-code { font-size: 16px; font-weight: bold; color: #2c3e50; }
     .popup-header .plate { color: #777; font-size: 13px; }
@@ -131,6 +132,7 @@
       <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png" width="12" height="20"> ÖHO</div>
       <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png" width="12" height="20"> Metrobüs</div>
       <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png" width="12" height="20"> İETT</div>
+      <div><img src="https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png" width="12" height="20"> Adalar</div>
       <iframe src="https://tumotobusler.betteruptime.com/badge?theme=light" width="180" height="30" frameborder="0" scrolling="no" style="color-scheme: normal"></iframe>
       <div style="margin-top: 10px;">
         <span style="font-size: 12px; color: #666;">Tolga T. (2025)</span>
@@ -155,6 +157,8 @@
         iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png';
       } else if (["Hasanpaşa", "Edirnekapı"].includes(garage.trim())) {
         iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
+      } else if (["ADALAR"].includes(garage.trim())) {
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png';
       } else {
         iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png';
       }
@@ -168,7 +172,7 @@
       });
     }
     function getPopupHTML(vehicle) {
-      const containerClass = !vehicle.garageName ? 'red' : ["Hasanpaşa", "Edirnekapı"].includes(vehicle.garageName) ? 'blue' : 'black';
+      const containerClass = !vehicle.garageName ? 'red' : ["Hasanpaşa", "Edirnekapı"].includes(vehicle.garageName) ? 'blue' : ["ADALAR"].includes(vehicle.garageName) ? 'green' : 'black';
       return `
         <div class="popup-container ${containerClass}">
           <div class="popup-header">
