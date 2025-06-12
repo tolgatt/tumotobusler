@@ -2,14 +2,13 @@
 <html lang="tr">
 <head>
   <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-5HQGHMMDKB"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-5HQGHMMDKB');
-</script>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-5HQGHMMDKB"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-5HQGHMMDKB');
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>İETT Araçları</title>
@@ -89,10 +88,21 @@
       border-radius: 5px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
+    #update-time {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 6px 12px;
+      font-size: 13px;
+      border-radius: 5px;
+      z-index: 1001;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      font-family: monospace;
+    }
   </style>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-  <link rel="stylesheet" href="popup.css">
 </head>
 <body>
   <div id="map"></div>
@@ -120,6 +130,137 @@
     <img src="https://tumotobusler.vercel.app/ikonlar/settings-sliders.png" alt="Filtreler">
   </div>
 
-  <script src="main.js"></script>
+  <div id="update-time">Son güncelleme: —</div>
+
+  <script>
+    const map = L.map('map').setView([41.0161, 28.9944], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let markers = L.markerClusterGroup();
+    let allMarkers = [];
+    let updateIntervalID;
+    let lastUpdateTime = 0;
+
+    function getCustomIcon(garage) {
+      let iconUrl;
+      if (!garage || garage === "null") {
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png';
+      } else if (["Hasanpaşa", "Edirnekapı"].includes(garage.trim())) {
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
+      } else {
+        iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png';
+      }
+
+      return L.icon({
+        iconUrl: iconUrl,
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41],
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      });
+    }
+
+    function updateTimestampDisplay() {
+      const now = new Date();
+      const formatted = now.toLocaleString('tr-TR', {
+        weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit'
+      });
+      document.getElementById('update-time').textContent = `Son güncelleme: ${formatted}`;
+    }
+
+    function updateGeoJSON() {
+      const now = Date.now();
+      if (now - lastUpdateTime < 60000) {
+        alert('1 dakikada birden sık güncelleme yapılamaz.');
+        return;
+      }
+
+      document.getElementById('loading').style.display = 'block';
+
+      fetch('https://arac.iett.gov.tr/api/task/bus-fleet/buses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        markers.clearLayers();
+        allMarkers = [];
+
+        data.forEach(vehicle => {
+          const lat = vehicle.latitude;
+          const lon = vehicle.longitude;
+          if (!lat || !lon) return;
+
+          const marker = L.marker([lat, lon], {
+            icon: getCustomIcon(vehicle.garageName),
+            opacity: 1
+          });
+
+          marker.feature = { properties: vehicle };
+          const popup = `
+            <b>${vehicle.vehicleDoorCode} / ${vehicle.numberPlate}</b><br>
+            <b>Garaj:</b> ${vehicle.garageName || '—'}<br>
+            <b>Şirket:</b> ${vehicle.operatorType}<br>
+            <b>Araç modeli:</b> ${vehicle.brandName} - ${vehicle.modelYear}<br>
+            <b>Son konum:</b> ${vehicle.lastLocationDate} ${vehicle.lastLocationTime}<br>
+            <a href="/gorev.html?arac=${vehicle.vehicleDoorCode}&utm_source=harita" target="_blank">Detaylı görev bilgisi</a><br>
+            <a href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">Araç İETT</a>
+          `;
+
+          marker.bindPopup(popup);
+          markers.addLayer(marker);
+          allMarkers.push(marker);
+        });
+
+        map.addLayer(markers);
+        document.getElementById('loading').style.display = 'none';
+        lastUpdateTime = Date.now();
+        updateTimestampDisplay();
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById('loading').innerHTML = 'Veri alınamadı.';
+      });
+    }
+
+    function filterMarkers() {
+      const value = document.getElementById('search').value.toLowerCase();
+      markers.clearLayers();
+      allMarkers.forEach(marker => {
+        const p = marker.feature.properties;
+        if ((value.startsWith("34") && p.numberPlate.toLowerCase().includes(value)) ||
+            (!value.startsWith("34") && p.vehicleDoorCode.toLowerCase().includes(value))) {
+          markers.addLayer(marker);
+        }
+      });
+    }
+
+    function setUpdateInterval() {
+      const minutes = parseInt(document.getElementById('update-interval').value) || 5;
+      clearInterval(updateIntervalID);
+      updateIntervalID = setInterval(updateGeoJSON, minutes * 60000);
+    }
+
+    // Event Listeners
+    document.getElementById('update-button').addEventListener('click', updateGeoJSON);
+    document.getElementById('search').addEventListener('input', filterMarkers);
+    document.getElementById('update-interval').addEventListener('input', setUpdateInterval);
+    document.getElementById('legend').addEventListener('click', () => {
+      const content = document.getElementById('legend-content');
+      content.style.display = content.style.display === 'block' ? 'none' : 'block';
+    });
+    document.getElementById('toggle-btn').addEventListener('click', () => {
+      const control = document.getElementById('control-container');
+      control.style.display = control.style.display === 'block' ? 'none' : 'block';
+    });
+
+    // İlk yükleme ve otomatik güncelleme başlat
+    updateGeoJSON();
+    updateIntervalID = setInterval(updateGeoJSON, 300000);
+  </script>
 </body>
 </html>
