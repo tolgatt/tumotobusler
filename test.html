@@ -172,19 +172,18 @@
       return `
         <div class="popup-container ${containerClass}">
           <div class="popup-header">
-            <div class="door-code">🚌 ${vehicle.vehicleDoorCode}</div>
+            <div class="door-code">${vehicle.vehicleDoorCode}</div>
             <div class="plate">${vehicle.numberPlate}</div>
           </div>
           <div class="popup-section">
-            <strong>🚏 Garaj:</strong> ${vehicle.garageName || '—'}<br>
-            <strong>🏢 Firma:</strong> ${vehicle.operatorType}<br>
-            <strong>🕒 Saat:</strong> ${vehicle.lastLocationTime}
+            <strong>🅿️ Garaj:</strong> ${vehicle.garageName || '—'}<br>
+            <strong>🏢 Şirket:</strong> ${vehicle.operatorType}<br>
+            <strong>🕒 Son güncellenme:</strong> ${vehicle.lastLocationDate}<br>${vehicle.lastLocationTime}
           </div>
           <div class="popup-section">
-            <strong>🗓 Model:</strong> ${vehicle.modelYear}<br>
-            <strong>🛠️ Yazılım:</strong> ${vehicle.softwareVersion || '-'}<br>
+            <strong>🗓 Marka - model:</strong> ${vehicle.modelYear} ${vehicle.brandName}<br>
             <strong>🚌 Tür:</strong> ${vehicle.vehicleType || '-'}<br>
-            <strong>🪑 Kapasite:</strong> ${vehicle.capacity || '-'}
+            <strong>🪑 Kapasite:</strong> ${vehicle.seatingCapacity || '-'} / ${vehicle.fullCapacity}
           </div>
           <div class="popup-icons">
             <div class="icon-badge">🔌 USB</div>
