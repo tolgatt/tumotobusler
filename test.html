@@ -30,28 +30,57 @@
       z-index: 1000;
     }
     #control-container {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      z-index: 1001;
-      background: white;
-      padding: 10px;
-      border-radius: 5px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      max-width: 250px;
-    }
-    #control-container input, #control-container button {
-      display: block;
-      margin-bottom: 10px;
-      width: calc(100% - 20px);
-      padding: 5px;
-      font-size: 14px;
-    }
-    #control-container label {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 14px;
-    }
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1001;
+  background-color: #fff;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 280px;
+  width: 90%;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+#control-container input,
+#control-container button {
+  display: block;
+  margin-bottom: 12px;
+  width: 100%;
+  padding: 10px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease;
+}
+
+#control-container input:focus {
+  border-color: #4a90e2;
+  outline: none;
+}
+
+#control-container button {
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+#control-container button:hover {
+  background-color: #357ab8;
+}
+
+#control-container label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
     #legend {
       position: absolute;
       bottom: 10px;
@@ -77,16 +106,37 @@
       vertical-align: middle;
     }
     .toggle-btn {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      cursor: pointer;
-      z-index: 1002;
-      padding: 5px;
-      background-color: white;
-      border-radius: 5px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-    }
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1002;
+  padding: 8px;
+  background-color: white;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.toggle-btn:hover {
+  background-color: #f0f0f0;
+}
+
+.toggle-btn img {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+@media (max-width: 600px) {
+  #control-container {
+    top: auto;
+    bottom: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}
     .popup-container {
       font-family: "Segoe UI", sans-serif;
       font-size: 12px;
@@ -125,12 +175,15 @@
 <body>
   <div id="map"></div>
   <div id="loading">Veriler yükleniyor...</div>
-  <div id="control-container">
-    <input type="text" id="search" placeholder="Kapı No veya Plaka Ara">
-    <label for="update-interval">Güncelleme Aralığı (dakika):</label>
-    <input type="number" id="update-interval" min="1" max="20" value="5">
-    <button id="update-button">Verileri Güncelle</button>
-  </div>
+<div id="control-container">
+  <label for="search">Ara:</label>
+  <input type="text" id="search" placeholder="Kapı No veya Plaka Ara">
+
+  <label for="update-interval">Güncelleme Aralığı (dakika):</label>
+  <input type="number" id="update-interval" min="1" max="20" value="5">
+
+  <button id="update-button">Verileri Güncelle</button>
+</div>
   <div id="legend">
     <h4>Lejant ve servis durumu</h4>
     <div id="legend-content">
@@ -144,9 +197,9 @@
       </div>
     </div>
   </div>
-  <div class="toggle-btn" id="toggle-btn">
-    <img src="https://tumotobusler.vercel.app/ikonlar/settings-sliders.png" alt="Filtreler">
-  </div>
+  <div class="toggle-btn" id="toggle-btn" title="Filtre Panelini Aç/Kapat">
+  <img src="https://tumotobusler.vercel.app/ikonlar/settings-sliders.png" alt="Filtreler Ayarları">
+</div>
   <script>
     const map = L.map('map').setView([41.0161, 28.9944], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
