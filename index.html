@@ -182,15 +182,7 @@
           });
 
           marker.feature = { properties: vehicle };
-          const popup = `
-            <b>${vehicle.vehicleDoorCode} / ${vehicle.numberPlate}</b><br>
-            <b>Garaj:</b> ${vehicle.garageName || '—'}<br>
-            <b>Şirket:</b> ${vehicle.operatorType}<br>
-            <b>Araç modeli:</b> ${vehicle.brandName} - ${vehicle.modelYear}<br>
-            <b>Son konum:</b> ${vehicle.lastLocationDate} ${vehicle.lastLocationTime}<br>
-            <a href="/gorev.html?arac=${vehicle.vehicleDoorCode}&utm_source=harita" target="_blank">Detaylı görev bilgisi</a><br>
-            <a href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">Araç İETT</a>
-          `;
+          marker.bindPopup(generatePopupHTML(vehicle));
 
           marker.bindPopup(popup);
           markers.addLayer(marker);
@@ -225,6 +217,37 @@
       updateIntervalID = setInterval(updateGeoJSON, minutes * 60000);
     }
 
+    function generatePopupHTML(vehicle) {
+      const containerClass = getGarageClass(vehicle.garageName);
+      return `
+        <div class="popup-container ${containerClass}">
+          <div class="popup-header">
+            <div class="door-code">🚌 ${vehicle.vehicleDoorCode}</div>
+            <div class="plate">${vehicle.numberPlate}</div>
+          </div>
+          <div class="popup-section">
+            <strong>🚏 Garaj:</strong> ${vehicle.garageName || '<span style="color:red;">—</span>'}<br>
+            <strong>🏢 Firma:</strong> ${vehicle.operatorType}<br>
+            <strong>🕒 Saat:</strong> ${vehicle.lastLocationTime}
+          </div>
+          <div class="popup-section">
+            <strong>🗓️ Model:</strong> ${vehicle.modelYear}<br>
+            <strong>💪 Yazılım:</strong> v${vehicle.vehicleSoftwareVersion}<br>
+            <strong>🚌 Tür:</strong> ${vehicle.vehicleType}<br>
+            <strong>🪑 Kapasite:</strong> ${vehicle.seatingCapacity} / ${vehicle.fullCapacity}
+          </div>
+          <div class="popup-icons">
+            <div class="icon-badge ${vehicle.hasUsbCharger ? '' : 'disabled'}">🔌 USB</div>
+            <div class="icon-badge ${vehicle.hasWifi ? '' : 'disabled'}">📶 Wi-Fi</div>
+            <div class="icon-badge ${vehicle.hasBicycleRack ? '' : 'disabled'}">🚲 Bisiklet</div>
+            <div class="icon-badge ${vehicle.accessibility ? '' : 'disabled'}">\267f️ Erişim</div>
+            <div class="icon-badge ${vehicle.isAirConditioned ? '' : 'disabled'}">❄️ Klima</div>
+          </div>
+          <a class="popup-link" href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">🔗 Detaylı Bilgi</a>
+        </div>
+      `;
+    }
+    
     // Event Listeners
     document.getElementById('update-button').addEventListener('click', updateGeoJSON);
     document.getElementById('search').addEventListener('input', filterMarkers);
