@@ -209,11 +209,10 @@
         }
       });
     }
-
-    function setUpdateInterval() {
-      const minutes = parseInt(document.getElementById('update-interval').value) || 5;
-      clearInterval(updateIntervalID);
-      updateIntervalID = setInterval(updateGeoJSON, minutes * 60000);
+    function getGarageClass(garageName) {
+      if (!garageName) return 'red';
+      if (["Hasanpaşa", "Edirnekapı"].includes(garageName)) return 'blue';
+      return 'black';
     }
 
     function generatePopupHTML(vehicle) {
@@ -227,11 +226,10 @@
           <div class="popup-section">
             <strong>🚏 Garaj:</strong> ${vehicle.garageName || '<span style="color:red;">—</span>'}<br>
             <strong>🏢 Firma:</strong> ${vehicle.operatorType}<br>
-            <strong>🕒 Saat:</strong> ${vehicle.lastLocationTime}
+            <strong>🕒 Son güncelleme:</strong> ${vehicle.lastLocationDate} - ${vehicle.lastLocationTime}
           </div>
           <div class="popup-section">
-            <strong>🗓️ Model:</strong> ${vehicle.modelYear}<br>
-            <strong>💪 Yazılım:</strong> v${vehicle.vehicleSoftwareVersion}<br>
+            <strong>🗓️ Model:</strong>${vehicle.brandName} ${vehicle.modelYear}<br>
             <strong>🚌 Tür:</strong> ${vehicle.vehicleType}<br>
             <strong>🪑 Kapasite:</strong> ${vehicle.seatingCapacity} / ${vehicle.fullCapacity}
           </div>
@@ -242,9 +240,49 @@
             <div class="icon-badge ${vehicle.accessibility ? '' : 'disabled'}">\267f️ Erişim</div>
             <div class="icon-badge ${vehicle.isAirConditioned ? '' : 'disabled'}">❄️ Klima</div>
           </div>
-          <a class="popup-link" href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">🔗 Detaylı Bilgi</a>
+          <a class="popup-link" href="https://tumotobusler.vercel.app/gorev.html?arac=${vehicle.vehicleDoorCode}&utm_source=harita" target="_blank">🔗 Detaylı görev bilgisi</a><br>
+          <a class="popup-link" href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">🔗 Araç İETT</a>
         </div>
       `;
+    }
+
+    function updateGeoJSON() {
+      const now = Date.now();
+      if (now - lastUpdateTime < 60000) {
+        alert('1 dakikada birden sık güncelleme yapılamaz.');
+        return;
+      }
+      document.getElementById('loading').style.display = 'block';
+      fetch('https://arac.iett.gov.tr/api/task/bus-fleet/buses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      .then(res => res.json())
+      .then(data => {
+        markers.clearLayers();
+        allMarkers = [];
+        data.forEach(vehicle => {
+          const lat = vehicle.latitude;
+          const lon = vehicle.longitude;
+          if (!lat || !lon) return;
+          const marker = L.marker([lat, lon], {
+            icon: getCustomIcon(vehicle.garageName),
+            opacity: 1
+          });
+          marker.feature = { properties: vehicle };
+          const popup = generatePopupHTML(vehicle); // Burada yeni HTML kullanılıyor
+          marker.bindPopup(popup);
+          markers.addLayer(marker);
+          allMarkers.push(marker);
+        });
+        map.addLayer(markers);
+        document.getElementById('loading').style.display = 'none';
+        lastUpdateTime = Date.now();
+      })
+      .catch(err => {
+        console.error(err);
+        document.getElementById('loading').innerHTML = 'Veri alınamadı.';
+      });
     }
     
     // Event Listeners
