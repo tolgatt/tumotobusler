@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="tr">
+<!DOCTYPE html><html lang="tr">
 <head>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-5HQGHMMDKB"></script>
@@ -88,18 +87,31 @@
       border-radius: 5px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.3);
     }
-    #update-time {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 6px 12px;
+    .popup-container {
+      font-family: "Segoe UI", sans-serif;
       font-size: 13px;
-      border-radius: 5px;
-      z-index: 1001;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-      font-family: monospace;
+      width: 270px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+      overflow: hidden;
+      color: #333;
+      border-left: 6px solid #333;
     }
+    .popup-container.red { border-color: #e74c3c; }
+    .popup-container.blue { border-color: #3498db; }
+    .popup-container.black { border-color: #2c3e50; }
+    .popup-header { background: #f5f5f5; padding: 10px; border-bottom: 1px solid #ddd; }
+    .popup-header .door-code { font-size: 16px; font-weight: bold; color: #2c3e50; }
+    .popup-header .plate { color: #777; font-size: 13px; }
+    .popup-section { padding: 10px; border-bottom: 1px solid #eee; }
+    .popup-section:last-child { border-bottom: none; }
+    .popup-section strong { display: inline-block; width: 90px; color: #555; }
+    .popup-icons { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; justify-content: flex-start; }
+    .icon-badge { display: flex; align-items: center; gap: 4px; font-size: 14px; background: #ecf0f1; padding: 4px 8px; border-radius: 12px; color: #2c3e50; }
+    .icon-badge.disabled { opacity: 0.4; }
+    .popup-link { display: block; text-align: center; padding: 10px; color: #2980b9; text-decoration: none; font-weight: 500; }
+    .popup-link:hover { text-decoration: underline; }
   </style>
   <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
@@ -125,24 +137,18 @@
       </div>
     </div>
   </div>
-
   <div class="toggle-btn" id="toggle-btn">
     <img src="https://tumotobusler.vercel.app/ikonlar/settings-sliders.png" alt="Filtreler">
   </div>
-
-  <div id="update-time">Son güncelleme: —</div>
-
   <script>
     const map = L.map('map').setView([41.0161, 28.9944], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
-
     let markers = L.markerClusterGroup();
     let allMarkers = [];
     let updateIntervalID;
     let lastUpdateTime = 0;
-
     function getCustomIcon(garage) {
       let iconUrl;
       if (!garage || garage === "null") {
@@ -152,7 +158,6 @@
       } else {
         iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png';
       }
-
       return L.icon({
         iconUrl: iconUrl,
         iconSize: [25, 41],
@@ -162,25 +167,43 @@
         shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
       });
     }
-
-    function updateTimestampDisplay() {
-      const now = new Date();
-      const formatted = now.toLocaleString('tr-TR', {
-        weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-      document.getElementById('update-time').textContent = `Son güncelleme: ${formatted}`;
+    function getPopupHTML(vehicle) {
+      const containerClass = !vehicle.garageName ? 'red' : ["Hasanpaşa", "Edirnekapı"].includes(vehicle.garageName) ? 'blue' : 'black';
+      return `
+        <div class="popup-container ${containerClass}">
+          <div class="popup-header">
+            <div class="door-code">🚌 ${vehicle.vehicleDoorCode}</div>
+            <div class="plate">${vehicle.numberPlate}</div>
+          </div>
+          <div class="popup-section">
+            <strong>🚏 Garaj:</strong> ${vehicle.garageName || '—'}<br>
+            <strong>🏢 Firma:</strong> ${vehicle.operatorType}<br>
+            <strong>🕒 Saat:</strong> ${vehicle.lastLocationTime}
+          </div>
+          <div class="popup-section">
+            <strong>🗓 Model:</strong> ${vehicle.modelYear}<br>
+            <strong>🛠️ Yazılım:</strong> ${vehicle.softwareVersion || '-'}<br>
+            <strong>🚌 Tür:</strong> ${vehicle.vehicleType || '-'}<br>
+            <strong>🪑 Kapasite:</strong> ${vehicle.capacity || '-'}
+          </div>
+          <div class="popup-icons">
+            <div class="icon-badge">🔌 USB</div>
+            <div class="icon-badge disabled">📶 Wi-Fi</div>
+            <div class="icon-badge disabled">🚲 Bisiklet</div>
+            <div class="icon-badge">♿ Erişim</div>
+            <div class="icon-badge disabled">❄️ Klima</div>
+          </div>
+          <a class="popup-link" href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">🔗 Detaylı Bilgi</a>
+        </div>
+      `;
     }
-
     function updateGeoJSON() {
       const now = Date.now();
       if (now - lastUpdateTime < 60000) {
         alert('1 dakikada birden sık güncelleme yapılamaz.');
         return;
       }
-
       document.getElementById('loading').style.display = 'block';
-
       fetch('https://arac.iett.gov.tr/api/task/bus-fleet/buses', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
@@ -189,44 +212,28 @@
       .then(data => {
         markers.clearLayers();
         allMarkers = [];
-
         data.forEach(vehicle => {
           const lat = vehicle.latitude;
           const lon = vehicle.longitude;
           if (!lat || !lon) return;
-
           const marker = L.marker([lat, lon], {
             icon: getCustomIcon(vehicle.garageName),
             opacity: 1
           });
-
           marker.feature = { properties: vehicle };
-          const popup = `
-            <b>${vehicle.vehicleDoorCode} / ${vehicle.numberPlate}</b><br>
-            <b>Garaj:</b> ${vehicle.garageName || '—'}<br>
-            <b>Şirket:</b> ${vehicle.operatorType}<br>
-            <b>Araç modeli:</b> ${vehicle.brandName} - ${vehicle.modelYear}<br>
-            <b>Son konum:</b> ${vehicle.lastLocationDate} ${vehicle.lastLocationTime}<br>
-            <a href="/gorev.html?arac=${vehicle.vehicleDoorCode}&utm_source=harita" target="_blank">Detaylı görev bilgisi</a><br>
-            <a href="https://arac.iett.gov.tr/${vehicle.vehicleDoorCode}" target="_blank">Araç İETT</a>
-          `;
-
-          marker.bindPopup(popup);
+          marker.bindPopup(getPopupHTML(vehicle));
           markers.addLayer(marker);
           allMarkers.push(marker);
         });
-
         map.addLayer(markers);
         document.getElementById('loading').style.display = 'none';
         lastUpdateTime = Date.now();
-        updateTimestampDisplay();
       })
       .catch(err => {
         console.error(err);
         document.getElementById('loading').innerHTML = 'Veri alınamadı.';
       });
     }
-
     function filterMarkers() {
       const value = document.getElementById('search').value.toLowerCase();
       markers.clearLayers();
@@ -238,14 +245,11 @@
         }
       });
     }
-
     function setUpdateInterval() {
       const minutes = parseInt(document.getElementById('update-interval').value) || 5;
       clearInterval(updateIntervalID);
       updateIntervalID = setInterval(updateGeoJSON, minutes * 60000);
     }
-
-    // Event Listeners
     document.getElementById('update-button').addEventListener('click', updateGeoJSON);
     document.getElementById('search').addEventListener('input', filterMarkers);
     document.getElementById('update-interval').addEventListener('input', setUpdateInterval);
@@ -257,8 +261,6 @@
       const control = document.getElementById('control-container');
       control.style.display = control.style.display === 'block' ? 'none' : 'block';
     });
-
-    // İlk yükleme ve otomatik güncelleme başlat
     updateGeoJSON();
     updateIntervalID = setInterval(updateGeoJSON, 300000);
   </script>
