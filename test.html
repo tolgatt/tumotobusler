@@ -179,9 +179,6 @@
   <label for="search">Ara:</label>
   <input type="text" id="search" placeholder="Kapı No veya Plaka Ara">
 	
-  <label for="searchgarage">Ara:</label>
-  <input type="text" id="searchgarage" placeholder="Garaj adı">
-	
   <label for="update-interval">Güncelleme Aralığı (dakika):</label>
   <input type="number" id="update-interval" min="1" max="20" value="5">
 
@@ -305,15 +302,6 @@
         const p = marker.feature.properties;
         if ((value.startsWith("34") && p.numberPlate.toLowerCase().includes(value)) ||
             (!value.startsWith("34") && p.vehicleDoorCode.toLowerCase().includes(value))) {
-          markers.addLayer(marker);
-        }
-		
-    function filterMarkers() {
-      const value = document.getElementById('searchgarage').value.toLowerCase();
-      markers.clearLayers();
-      allMarkers.forEach(marker => {
-        const p = marker.feature.properties;
-        p.garage.toLowerCase().includes(value))) {
           markers.addLayer(marker);
         }
       });
