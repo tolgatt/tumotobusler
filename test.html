@@ -306,7 +306,9 @@
         if ((value.startsWith("34") && p.numberPlate.toLowerCase().includes(value)) ||
             (!value.startsWith("34") && p.vehicleDoorCode.toLowerCase().includes(value))) {
           markers.addLayer(marker);
+        }
 		
+    function filterMarkers() {
       const value = document.getElementById('searchgarage').value.toLowerCase();
       markers.clearLayers();
       allMarkers.forEach(marker => {
