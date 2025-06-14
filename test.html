@@ -213,12 +213,16 @@
       let iconUrl;
       if (!garage || garage === "null") {
         iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png';
+	color = 'red';
       } else if (["Hasanpaşa", "Edirnekapı"].includes(garage.trim())) {
         iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png';
+	color = 'blue';
       } else if (["ADALAR"].includes(garage.trim())) {
         iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png';
+	color = 'green';
       } else {
         iconUrl = 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-black.png';
+	color = 'black';
       }
       return L.icon({
         iconUrl: iconUrl,
